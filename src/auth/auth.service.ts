@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Logger, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -16,37 +16,39 @@ export class AuthService {
 
   /**
    * Register a new user in the database.
-   * @param email - User's email address.
-   * @param password - User's plain-text password.
-   * @param name - User's name.
-   * @param role - Role of the user (default: "user").
+   * @param dto - User's name,email,password and role.
    * @returns Success message and user ID.
    */
   async registerUser(dto:RegisterDto) {
-    this.logger.log(`Attempting to register user with email: ${dto.email}`);
+    try {
+      this.logger.log(`Attempting to register user`);
 
 
-    const existingUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (existingUser) {
-      this.logger.error(`Registration failed: User with email ${dto.email} already exists`);
-      throw new BadRequestException('User with this email already exists');
+      const existingUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
+      if (existingUser) {
+        this.logger.error(`Registration failed: User with email ${dto.email} already exists`);
+        throw new BadRequestException('User with this email already exists');
+      }
+  
+  
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+      const { password, ...restDto } = dto;
+  
+      const user = await this.prisma.user.create({
+        data: {
+          ...restDto,
+          password: hashedPassword,
+        },
+      });
+  
+      const { password: _, ...User } = user;
+  
+      this.logger.log(`User registered successfully`);
+      return { message: `User registered successfully`, data: user };
+    } catch (error) {
+      this.logger.error(`Registration failed`);
+        throw new InternalServerErrorException(`{message: user registration failed , error ${error}}`);
     }
-
-
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const { password, ...restDto } = dto;
-
-    const user = await this.prisma.user.create({
-      data: {
-        ...restDto,
-        password: hashedPassword,
-      },
-    });
-
-    const { password: _, ...User } = user;
-
-    this.logger.log(`User registered successfully`);
-    return { message: `User registered successfully`, data: user };
   }
 
    /**

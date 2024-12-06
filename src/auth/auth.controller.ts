@@ -13,7 +13,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   /**
-   * Register a new user.
+   * Register a new user.JWT_SECRET
    * @param body - RegisterDto containing name, email, and password.
    */
   @Post('register')
