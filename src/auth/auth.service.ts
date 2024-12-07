@@ -71,7 +71,7 @@ export class AuthService {
       data: {
         ...dto,
         password: hashedPassword,
-        role: 'admin', // Explicitly set the role as 'admin'
+        role: 'ADMIN', // Explicitly set the role as 'admin'
       },
     });
 

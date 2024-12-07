@@ -1,17 +1,11 @@
-version: '3.8'
-
+version: '3.7'
 services:
-  mongo_container:
-    image: mongo:6.0
-    container_name: mongo_container
-    ports:
-      - "27017:27017"
+  postgres:
+    image: postgres:13
+    container_name: postgres_container
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
-    command: ["mongod", "--replSet", "rs0"] # Enable replication
-    volumes:
-      - mongodb-data:/data/db
-
-volumes:
-  mongodb-data:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: test
+    ports:
+      - 5432:5432
