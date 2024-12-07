@@ -9,17 +9,19 @@ import {
     UseGuards,
   } from '@nestjs/common';
   import { CartService } from './cart.service';
-  import { CreateCartDto } from './DTO/create-cart.dto';
-  import { RemoveCartDto } from './DTO/remove-cart.dto';
-import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard'; // Adjust based on your actual guard
-import { CurrentUser } from '../auth/decorator/current-user.decorator'; // Adjust based on your setup
+  import { CreateCartDto, CreateUserCartDto } from './DTO/create-cart.dto';
+  import { RemoveCartDto, RemoveUserCartDto } from './DTO/remove-cart.dto';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorator/current-user.decorator'; 
   
   @Controller('cart')
-  @UseGuards(JwtAuthGuard) // Ensure the user is authenticated
+  @UseGuards(JwtAuthGuard) 
   export class CartController {
     constructor(private readonly cartService: CartService) {}
   
-    // Get current user's cart
+  /**
+   * Retrieve the current user's shopping cart
+   */
 
     @Get()
     async getCart(@CurrentUser('userId') userId: string) {
@@ -27,27 +29,44 @@ import { CurrentUser } from '../auth/decorator/current-user.decorator'; // Adjus
       return this.cartService.getCart(userId);
     }
   
-    // Add a product to the cart
+      /**
+   * Add a product to the cart
+   */
     @Post()
     async addToCart(
       @CurrentUser('id') userId: string,
       @Body() createCartDto: CreateCartDto,
     ) {
-      return this.cartService.addToCart(userId, createCartDto);
+      const userCartDto = new CreateUserCartDto();
+      userCartDto.userId = userId;
+      userCartDto.coffeeId = createCartDto.coffeeId;
+      userCartDto.quantity = createCartDto.quantity;
+  
+      // Pass the instance to the service
+      return this.cartService.addToCart(userCartDto);
     }
   
-    // Remove a product from the cart
-    @Delete()
+      /**
+   * Remove a product from the cart
+   */
+    @Delete(':cartId')
     async removeFromCart(
       @CurrentUser('id') userId: string,
+      @Param('cartId') cartId: string, 
       @Body() removeCartDto: RemoveCartDto,
     ) {
-      return this.cartService.removeFromCart(userId, removeCartDto);
+      const removeUserCartDto: RemoveUserCartDto = {
+        cartId,
+        ...removeCartDto,
+      };
+      return this.cartService.removeFromCart(userId, removeUserCartDto);
     }
   
-    // Proceed to checkout
+  /**
+   * Checkout the cart
+   */
     @Post('checkout')
-    async checkoutCart(@CurrentUser('id') userId: string) {
+    async checkoutCart(@CurrentUser('userId') userId: string) {
       return this.cartService.checkoutCart(userId);
     }
   }

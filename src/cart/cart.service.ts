@@ -1,7 +1,13 @@
-import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCartDto } from './DTO/create-cart.dto';
-import { RemoveCartDto } from './DTO/remove-cart.dto';
+import { CreateUserCartDto } from './DTO/create-cart.dto';
+import { RemoveCartDto, RemoveUserCartDto } from './DTO/remove-cart.dto';
 
 @Injectable()
 export class CartService {
@@ -9,7 +15,9 @@ export class CartService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // Get current user's cart
+  /**
+   * Retrieve the current user's shopping cart
+   */
   async getCart(userId: string) {
     this.logger.log(`Fetching cart for user ${userId}`);
     const cart = await this.prisma.cart.findFirst({
@@ -17,7 +25,7 @@ export class CartService {
       include: {
         items: {
           include: {
-            coffee: true, // Include coffee details in items
+            coffee: true,
           },
         },
       },
@@ -41,63 +49,63 @@ export class CartService {
     };
   }
 
-  // Add a product to the cart
-  async addToCart(userId: string, createCartDto: CreateCartDto) {
-    this.logger.log(`Adding coffee to cart for user ${userId}`);
+  /**
+   * Add a product to the cart
+   */
+  async addToCart(createUserCartDto: CreateUserCartDto) {
+    this.logger.log(`Adding coffee to cart `);
 
-    const coffee = await this.prisma.coffee.findUnique({ where: { id: createCartDto.coffeeId } });
+    const coffee = await this.prisma.coffee.findUnique({
+      where: { id: createUserCartDto.coffeeId },
+    });
     if (!coffee) {
-      this.logger.warn(`Coffee not found for coffeeId ${createCartDto.coffeeId}`);
+      this.logger.warn(
+        `Coffee not found for coffeeId ${createUserCartDto.coffeeId}`,
+      );
       throw new NotFoundException('Coffee not found');
     }
 
     try {
       let cart = await this.prisma.cart.findFirst({
-        where: { userId },
+        where: { userId: createUserCartDto.userId },
       });
-
-      if (!cart) {
-        cart = await this.prisma.cart.create({
-          data: { userId },
-        });
-        this.logger.log(`Created a new cart for user ${userId}`);
-      }
-
       const existingCartItem = await this.prisma.cartItem.findFirst({
-        where: { coffeeId: createCartDto.coffeeId, cartId: cart.id },
+        where: { coffeeId: createUserCartDto.coffeeId, cartId: cart.id },
       });
 
       if (existingCartItem) {
         const updatedCartItem = await this.prisma.cartItem.update({
           where: { id: existingCartItem.id },
           data: {
-            quantity: existingCartItem.quantity + createCartDto.quantity,
+            quantity: existingCartItem.quantity + createUserCartDto.quantity,
           },
         });
-        this.logger.log(`Updated coffee quantity in cart for user ${userId}`);
+        this.logger.log(`Updated coffee quantity in cart`);
       } else {
         await this.prisma.cartItem.create({
           data: {
-            coffeeId: createCartDto.coffeeId,
-            quantity: createCartDto.quantity,
+            coffeeId: createUserCartDto.coffeeId,
+            quantity: createUserCartDto.quantity,
             cartId: cart.id,
           },
         });
-        this.logger.log(`Added coffee to cart for user ${userId}`);
+        this.logger.log(`Added coffee to cart `);
       }
 
       return {
         message: 'Coffee added to cart successfully',
       };
     } catch (error) {
-      this.logger.error(`Failed to add coffee to cart for user ${userId}`, error.stack);
+      this.logger.error(`Failed to add coffee to cart `, error.stack);
       throw new InternalServerErrorException('Failed to update cart');
     }
   }
 
-  // Remove a product from the cart
-  async removeFromCart(userId: string, removeCartDto: RemoveCartDto) {
-    this.logger.log(`Removing coffee from cart for user ${userId}`);
+  /**
+   * Remove a product from the cart
+   */
+  async removeFromCart(userId: string, removeUserCartDto: RemoveUserCartDto) {
+    this.logger.log(`Removing coffee from cart `);
 
     const cart = await this.prisma.cart.findFirst({
       where: { userId },
@@ -105,27 +113,27 @@ export class CartService {
     });
 
     if (!cart) {
-      this.logger.warn(`Cart not found for user ${userId}`);
+      this.logger.warn(`Cart not found`);
       throw new NotFoundException('Cart not found');
     }
 
     const cartItem = await this.prisma.cartItem.findFirst({
       where: {
         cartId: cart.id,
-        coffeeId: removeCartDto.coffeeId,
+        coffeeId: removeUserCartDto.coffeeId,
       },
     });
 
     if (!cartItem) {
-      this.logger.warn(`Coffee not found in cart for user ${userId}`);
+      this.logger.warn(`Coffee not found`);
       throw new NotFoundException('Coffee not found in cart');
     }
 
-    if (cartItem.quantity > removeCartDto.quantity) {
+    if (cartItem.quantity > removeUserCartDto.quantity) {
       await this.prisma.cartItem.update({
         where: { id: cartItem.id },
         data: {
-          quantity: cartItem.quantity - removeCartDto.quantity,
+          quantity: cartItem.quantity - removeUserCartDto.quantity,
         },
       });
       this.logger.log(`Decreased coffee quantity in cart for user ${userId}`);
@@ -140,12 +148,14 @@ export class CartService {
       message: 'Coffee removed from cart successfully',
     };
   }
-
-  // Proceed to checkout
+  /**
+   * Checkout the cart
+   */
   async checkoutCart(userId: string) {
     this.logger.log(`Processing checkout for user ${userId}`);
-  
+
     try {
+      // Get the cart and include coffee details
       const cart = await this.prisma.cart.findFirst({
         where: { userId },
         include: {
@@ -156,55 +166,74 @@ export class CartService {
           },
         },
       });
-  
+
+      // Check if the cart is empty
       if (!cart || cart.items.length === 0) {
         this.logger.warn(`Cannot checkout empty cart for user ${userId}`);
         throw new BadRequestException('Your cart is empty');
       }
-  
+
       // Calculate total price
       const totalPrice = cart.items.reduce(
         (acc, item) => acc + item.coffee.price * item.quantity,
-        0
+        0,
       );
-  
-      // Process payment (this is a mock; replace with actual payment logic)
-      const paymentSuccessful = await this.processPayment(userId, totalPrice);
-  
-      if (!paymentSuccessful) {
-        this.logger.warn(`Payment failed for user ${userId}`);
-        throw new BadRequestException('Payment failed');
-      }
-  
-      const orderItems = cart.items.map(item => ({
+
+      // Mock payment processing (you can replace with actual logic)
+      // const paymentSuccessful = await this.processPayment(userId, totalPrice);
+      // if (!paymentSuccessful) {
+      //   this.logger.warn(`Payment failed for user ${userId}`);
+      //   throw new BadRequestException('Payment failed');
+      // }
+
+      // Prepare the order items
+      const orderItems = cart.items.map((item) => ({
         coffeeId: item.coffeeId,
         quantity: item.quantity,
         price: item.coffee.price,
       }));
-  
+
+      // Create the order
       const order = await this.prisma.order.create({
         data: {
           userId,
-          total:totalPrice,
-          items: { create: orderItems }, // Ensure order items are linked correctly
+          total: totalPrice,
+          items: {
+            create: orderItems, // Add items to the order
+          },
         },
       });
-  
-      await this.prisma.cart.delete({
-        where: { id: cart.id },
+      const cartItem = await this.prisma.cartItem.findFirst({
+        where: {
+          cartId: cart.id,
+        },
       });
-  
+
+      // Update cart items: Instead of deleting, we just update the quantity in cart items
+      await this.prisma.cartItem.delete({
+        where: { id: cartItem.id },
+      });
+
+      // Optionally clear the cart after checkout if you want
+      // await this.prisma.cart.update({
+      //   where: { userId },
+      //   data: { items: { deleteMany: {} } },
+      // });
+
       this.logger.log(`Checkout completed successfully for user ${userId}`);
       return { message: 'Checkout successful', order };
     } catch (error) {
-      this.logger.error(`Error processing checkout for user ${userId}`, error.stack);
+      this.logger.error(
+        `Error processing checkout for user ${userId}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('Unable to process checkout');
     }
   }
 
   // Simulate payment processing
-  private async processPayment(userId: string, totalPrice: number): Promise<boolean> {
-    // Integrate payment logic (e.g., Stripe, PayPal)
-    return true;
-  }
+  // private async processPayment(userId: string, totalPrice: number): Promise<boolean> {
+  //   // Integrate payment logic (e.g., Stripe, PayPal)
+  //   return true;
+  // }
 }

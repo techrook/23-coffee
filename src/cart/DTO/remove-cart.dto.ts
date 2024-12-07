@@ -1,17 +1,24 @@
-import { IsNotEmpty, IsUUID, IsInt, Min } from 'class-validator';
+import { IsString, IsInt, Min } from 'class-validator';
 
 export class RemoveCartDto {
-  @IsNotEmpty()
-  @IsUUID()
-  cartId: string;
-
-  @IsNotEmpty()
-  @IsUUID()
+  @IsString()
   coffeeId: string;
 
-  @IsNotEmpty()
   @IsInt()
-  @Min(1) // Ensures quantity is at least 1
+  @Min(1)
   quantity: number;
 }
+
+export class RemoveUserCartDto {
+  @IsString()
+  cartId: string;  // Add cartId to the DTO
+
+  @IsString()
+  coffeeId: string;
+
+  @IsInt()
+  @Min(1)
+  quantity: number;
+}
+
 

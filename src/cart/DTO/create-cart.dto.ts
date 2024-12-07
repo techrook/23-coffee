@@ -3,8 +3,6 @@
 import { IsString, IsInt, Min } from 'class-validator';
 
 export class CreateCartDto {
-  @IsString()
-  userId: string;
 
   @IsString()
   coffeeId: string;
@@ -12,4 +10,10 @@ export class CreateCartDto {
   @IsInt()
   @Min(1)
   quantity: number;
+}
+
+export class CreateUserCartDto extends CreateCartDto {
+  @IsString()
+  userId: string;
+
 }
