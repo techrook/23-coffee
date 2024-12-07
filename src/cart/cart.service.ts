@@ -11,47 +11,49 @@ export class CartService {
 
   // Get current user's cart
   async getCart(userId: string) {
-    this.logger.log(`Fetching cart `);
+    this.logger.log(`Fetching cart for user ${userId}`);
     const cart = await this.prisma.cart.findFirst({
       where: { userId },
       include: {
-        items: true, 
+        items: {
+          include: {
+            coffee: true, // Include coffee details in items
+          },
+        },
       },
     });
 
     if (!cart) {
-      this.logger.warn(`Cart not found`);
+      this.logger.warn(`Cart not found for user ${userId}`);
       throw new NotFoundException('Cart not found');
     }
 
     return {
       message: 'Cart successfully fetched',
-      data:cart
+      data: cart,
     };
   }
 
   // Add a product to the cart
   async addToCart(userId: string, createCartDto: CreateCartDto) {
-    this.logger.log(`Adding coffee to cart`);
-
+    this.logger.log(`Adding coffee to cart for user ${userId}`);
 
     const coffee = await this.prisma.coffee.findUnique({ where: { id: createCartDto.coffeeId } });
     if (!coffee) {
-      this.logger.warn(`Coffee not found`);
+      this.logger.warn(`Coffee not found for coffeeId ${createCartDto.coffeeId}`);
       throw new NotFoundException('Coffee not found');
     }
 
     try {
-
       let cart = await this.prisma.cart.findFirst({
         where: { userId },
       });
-
 
       if (!cart) {
         cart = await this.prisma.cart.create({
           data: { userId },
         });
+        this.logger.log(`Created a new cart for user ${userId}`);
       }
 
       const existingCartItem = await this.prisma.cartItem.findFirst({
@@ -59,7 +61,6 @@ export class CartService {
       });
 
       if (existingCartItem) {
-
         const updatedCartItem = await this.prisma.cartItem.update({
           where: { id: existingCartItem.id },
           data: {
@@ -68,7 +69,6 @@ export class CartService {
         });
         this.logger.log(`Updated coffee quantity in cart for user ${userId}`);
       } else {
-       
         await this.prisma.cartItem.create({
           data: {
             coffeeId: createCartDto.coffeeId,
@@ -92,7 +92,6 @@ export class CartService {
   async removeFromCart(userId: string, removeCartDto: RemoveCartDto) {
     this.logger.log(`Removing coffee from cart for user ${userId}`);
 
-    // Check if the coffee exists in the cart
     const cart = await this.prisma.cart.findFirst({
       where: { userId },
       include: { items: true },
@@ -115,7 +114,6 @@ export class CartService {
       throw new NotFoundException('Coffee not found in cart');
     }
 
-    // Decrease quantity or remove the item completely
     if (cartItem.quantity > removeCartDto.quantity) {
       await this.prisma.cartItem.update({
         where: { id: cartItem.id },
@@ -141,7 +139,6 @@ export class CartService {
     this.logger.log(`Processing checkout for user ${userId}`);
   
     try {
-      // Fetch the cart for the user and include coffee details in the items
       const cart = await this.prisma.cart.findFirst({
         where: { userId },
         include: {
@@ -154,17 +151,17 @@ export class CartService {
       });
   
       if (!cart || cart.items.length === 0) {
-        this.logger.warn(`Cannot checkout empty cart`);
+        this.logger.warn(`Cannot checkout empty cart for user ${userId}`);
         throw new BadRequestException('Your cart is empty');
       }
   
-      // Calculate the total price using the coffee price
+      // Calculate total price
       const totalPrice = cart.items.reduce(
         (acc, item) => acc + item.coffee.price * item.quantity,
         0
       );
   
-      // Integrate payment gateway here (e.g., Stripe, PayPal)
+      // Process payment (this is a mock; replace with actual payment logic)
       const paymentSuccessful = await this.processPayment(userId, totalPrice);
   
       if (!paymentSuccessful) {
@@ -172,23 +169,20 @@ export class CartService {
         throw new BadRequestException('Payment failed');
       }
   
-      // Create order items by mapping the cart items
       const orderItems = cart.items.map(item => ({
         coffeeId: item.coffeeId,
         quantity: item.quantity,
         price: item.coffee.price,
       }));
   
-      // Create an order from the cart
       const order = await this.prisma.order.create({
         data: {
           userId,
-          totalPrice,
-          items: cart,
+          total:totalPrice,
+          items: { create: orderItems }, // Ensure order items are linked correctly
         },
       });
   
-      // Clear the cart
       await this.prisma.cart.delete({
         where: { id: cart.id },
       });
@@ -200,12 +194,10 @@ export class CartService {
       throw new InternalServerErrorException('Unable to process checkout');
     }
   }
-  
 
-  // Dummy method to simulate payment processing
+  // Simulate payment processing
   private async processPayment(userId: string, totalPrice: number): Promise<boolean> {
-    // Simulate a payment gateway integration (e.g., Stripe, PayPal)
-    // Replace with actual payment processing logic
+    // Integrate payment logic (e.g., Stripe, PayPal)
     return true;
   }
 }

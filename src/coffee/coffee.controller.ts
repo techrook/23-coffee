@@ -32,7 +32,7 @@ import { UpdateCoffeeDto } from './DTO/updateCoffee.dto';
      */
     @Get(':id')
     async findOne(@Param('id') id: string) {
-      return this.coffeeService.findOneCoffe(id);
+      return this.coffeeService.findCoffeeById(id);
     }
   
     /**

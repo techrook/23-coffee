@@ -17,7 +17,7 @@ export class CoffeeService {
    * Fetch a single coffee item by ID.
    * @throws NotFoundException if the item does not exist.
    */
-  async findOneCoffe(id: string) {
+  async findCoffeeById(id: string) {
     const coffee = await this.prisma.coffee.findUnique({ where: { id } });
     if (!coffee) throw new NotFoundException('Coffee item not found');
     return coffee;
