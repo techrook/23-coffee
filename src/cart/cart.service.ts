@@ -24,8 +24,15 @@ export class CartService {
     });
 
     if (!cart) {
-      this.logger.warn(`Cart not found for user ${userId}`);
-      throw new NotFoundException('Cart not found');
+      const newCart = await this.prisma.cart.create({
+        data: { userId },
+      });
+      this.logger.log(`Created a new cart for user ${userId}`);
+
+      return {
+        message: 'Cart successfully fetched',
+        data: newCart,
+      };
     }
 
     return {

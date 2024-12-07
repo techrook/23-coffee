@@ -15,7 +15,7 @@ import { UpdateCoffeeDto } from './DTO/updateCoffee.dto';
   import { RolesGuard } from '../auth/guard/roles.guard';
   import { Roles } from '../auth/decorator/roles.decorator';
 
-  @Controller('coffees') // Base route for coffee-related endpoints
+  @Controller('coffees') 
   export class CoffeeController {
     constructor(private readonly coffeeService: CoffeeService) {}
   
@@ -32,6 +32,7 @@ import { UpdateCoffeeDto } from './DTO/updateCoffee.dto';
      */
     @Get(':id')
     async findOne(@Param('id') id: string) {
+      console.log(id)
       return this.coffeeService.findCoffeeById(id);
     }
   

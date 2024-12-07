@@ -20,8 +20,10 @@ import { CurrentUser } from '../auth/decorator/current-user.decorator'; // Adjus
     constructor(private readonly cartService: CartService) {}
   
     // Get current user's cart
+
     @Get()
-    async getCart(@CurrentUser('id') userId: string) {
+    async getCart(@CurrentUser('userId') userId: string) {
+      console.log(userId)
       return this.cartService.getCart(userId);
     }
   
