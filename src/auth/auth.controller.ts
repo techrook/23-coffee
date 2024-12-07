@@ -18,7 +18,6 @@ export class AuthController {
    */
   @Post('register')
   async registerUser(@Body() dto: RegisterDto) {
-
     this.logger.log(`Incoming registration request`);
     const response = await this.authService.registerUser(dto);
     this.logger.log(`Registration successful`);
