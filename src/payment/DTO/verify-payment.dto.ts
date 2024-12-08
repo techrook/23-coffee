@@ -1,7 +1,8 @@
-
+import { IsString } from 'class-validator';
 
 
 export class VerifyPaymentDto {
-    reference: string; // Reference returned by Paystack after payment initiation
+  @IsString()
+    reference: string; 
   }
   

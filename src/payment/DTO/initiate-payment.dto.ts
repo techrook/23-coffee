@@ -1,8 +1,10 @@
-
-
+// initiate-payment.dto.ts
+import { IsString } from 'class-validator';
 
 export class InitiatePaymentDto {
-    orderId: string;
-    email: string; // Paystack requires the customer's email
-  }
-  
+  @IsString()
+  orderId: string;
+
+  @IsString()
+  email: string;
+}
