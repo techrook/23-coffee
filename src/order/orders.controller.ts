@@ -13,13 +13,13 @@ export class OrdersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('orders')
-  async getOrders(@CurrentUser('id') userId: string) {
+  async getOrders(@CurrentUser('userId') userId: string) {
     return this.ordersService.getOrdersForUser(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('orders/:id')
-  async getOrderDetails(@CurrentUser('id') userId: string, @Param('id') orderId: string) {
+  async getOrderDetails(@CurrentUser('userId') userId: string, @Param('id') orderId: string) {
     return this.ordersService.getOrderById(userId, orderId);
   }
 
@@ -33,7 +33,7 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Put('admin/orders/:id')
-  async updateOrderStatus(@Param('id') orderId: string, @Body('status') status: UpdateOrderStatusDto) {
+  async updateOrderStatus(@Param('id') orderId: string, @Body('status') status: string) {
     return this.ordersService.updateOrderStatus(orderId, status);
   }
 }

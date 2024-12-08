@@ -40,22 +40,18 @@ export class OrdersService {
   }
 
   // Update the status of an order
-  async updateOrderStatus(orderId: string, updateOrderStatusDto: UpdateOrderStatusDto) {
+  async updateOrderStatus(orderId: string, status: string) {
     const order = await this.prisma.order.findUnique({ where: { id: orderId } });
     if (!order) {
       throw new NotFoundException('Order not found');
     }
 
-    // Ensure the status passed is a valid enum value (e.g., Pending, Completed, etc.)
-
-    
-    
 
     // Update the order's status
     return this.prisma.order.update({
       where: { id: orderId },
       data: {
-        status: updateOrderStatusDto.status,
+        status: status,
       },
     });
   }
