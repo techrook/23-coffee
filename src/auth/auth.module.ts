@@ -9,7 +9,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 @Module({
   imports: [
     PrismaModule, 
-    PassportModule.register({ defaultStrategy: 'jwt' }), // Use JWT as the default strategy
+    PassportModule.register({ defaultStrategy: 'jwt' }), 
     JwtModule.register({
       secret: process.env.JWT_SECRET, 
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }, 

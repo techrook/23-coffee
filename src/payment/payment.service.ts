@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';// Adjust based on your
 
 @Injectable()
 export class PaymentService {
-  private readonly paystackBaseUrl = 'https://api.paystack.co';
+  private readonly paystackBaseUrl:string =process.env.PAYSTACK_BASE_URL;
   private readonly paystackSecretKey: string;
 
   constructor(
@@ -26,12 +26,12 @@ export class PaymentService {
       throw new NotFoundException(`Order with ID ${orderId} not found.`);
     }
 
-    const amount = order.total; // Use the total from the order
+    const amount = order.total; 
 
     const payload = {
       email,
-      amount: amount, 
-      reference: `order_${orderId}_${Date.now()}`, // Unique reference
+      amount: amount * 100, 
+      reference: `order_${orderId}_${Date.now()}`, 
     };
 
     const response = await this.httpService.axiosRef.post(

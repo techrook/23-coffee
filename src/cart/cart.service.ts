@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserCartDto } from './DTO/create-cart.dto';
-import { RemoveCartDto, RemoveUserCartDto } from './DTO/remove-cart.dto';
+import { RemoveUserCartDto } from './DTO/remove-cart.dto';
 
 @Injectable()
 export class CartService {
@@ -19,7 +19,7 @@ export class CartService {
    * Retrieve the current user's shopping cart
    */
   async getCart(userId: string) {
-    this.logger.log(`Fetching cart for user ${userId}`);
+    this.logger.log(`Fetching user's cart`);
     const cart = await this.prisma.cart.findFirst({
       where: { userId },
       include: {
@@ -35,7 +35,7 @@ export class CartService {
       const newCart = await this.prisma.cart.create({
         data: { userId },
       });
-      this.logger.log(`Created a new cart for user ${userId}`);
+      this.logger.log(`Created a new cart`);
 
       return {
         message: 'Cart successfully fetched',
@@ -155,25 +155,24 @@ export class CartService {
     this.logger.log(`Processing checkout for user ${userId}`);
 
     try {
-      // Get the cart and include coffee details
+      
       const cart = await this.prisma.cart.findFirst({
         where: { userId },
         include: {
           items: {
             include: {
-              coffee: true, // Include coffee details for each item
+              coffee: true,
             },
           },
         },
       });
 
-      // Check if the cart is empty
+      
       if (!cart || cart.items.length === 0) {
         this.logger.warn(`Cannot checkout empty cart for user ${userId}`);
         throw new BadRequestException('Your cart is empty');
       }
 
-      // Calculate total price
       const totalPrice = cart.items.reduce(
         (acc, item) => acc + item.coffee.price * item.quantity,
         0,
@@ -186,14 +185,13 @@ export class CartService {
       //   throw new BadRequestException('Payment failed');
       // }
 
-      // Prepare the order items
       const orderItems = cart.items.map((item) => ({
         coffeeId: item.coffeeId,
         quantity: item.quantity,
         price: item.coffee.price,
       }));
 
-      // Create the order
+
       const order = await this.prisma.order.create({
         data: {
           userId,

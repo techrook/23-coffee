@@ -2,18 +2,16 @@ import { Controller, Post, Body, UseGuards, Logger } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './DTO/registerUser.dto';
 import { LoginDto } from './DTO/loginUser.dto';
-import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
-import { RolesGuard } from '../auth/guard/roles.guard';
-import { Roles } from '../auth/decorator/roles.decorator';
 
-@Controller('auth') // Base route for authentication
+
+@Controller('auth') 
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
 
   /**
-   * Register a new user.JWT_SECRET
+   * Register a new user
    * @param body - RegisterDto containing name, email, and password.
    */
   @Post('register')
@@ -25,7 +23,7 @@ export class AuthController {
   }
 
   /**
-   * Create a new admin (restricted to superadmins).
+   * Create a new admin.
    * @param body - RegisterDto containing name, email, and password.
    */
   @Post('create-admin')
@@ -43,7 +41,7 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto) {
     this.logger.log(`Incoming login request`);
-    const response = await this.authService.loginUser(dto);
+    const response = await this.authService.loginAnyUser(dto);
     this.logger.log(`Login successful`);
     return response;
   }

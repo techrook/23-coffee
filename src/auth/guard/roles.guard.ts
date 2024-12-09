@@ -12,7 +12,7 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const roles = this.reflector.get<string[]>('roles', context.getHandler());
-    if (!roles) return true; // If no roles are specified, allow all authenticated users
+    if (!roles) return true; 
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
@@ -22,7 +22,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User role not found');
     }
 
-    // Normalize role strings to lowercase for comparison
+    
     const userRole = user.role.toLowerCase();
     const allowedRoles = roles.map((role) => role.toLowerCase());
 

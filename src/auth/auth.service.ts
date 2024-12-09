@@ -3,7 +3,6 @@ import {
   UnauthorizedException,
   BadRequestException,
   Logger,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -60,14 +59,14 @@ export class AuthService {
    * @returns Success message and admin data.
    */
   async registerAdmin(dto: RegisterDto) {
-    this.logger.log(`Attempting to register admin with email: ${dto.email}`);
+    this.logger.log(`Attempting to register admin`);
 
     const existingAdmin = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
     if (existingAdmin) {
       this.logger.error(
-        `Admin registration failed: User with email ${dto.email} already exists`,
+        `Admin registration failed, email already exists`,
       );
       throw new BadRequestException('email already exists');
     }
@@ -94,8 +93,8 @@ export class AuthService {
    * @param password - User's plain-text password.
    * @returns A JWT token if authentication is successful.
    */
-  async loginUser(dto: LoginDto) {
-    this.logger.log(`Attempting to log in`);
+  async loginAnyUser(dto: LoginDto) {
+    this.logger.log(`Attempting to login`);
 
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
