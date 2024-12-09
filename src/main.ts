@@ -16,7 +16,7 @@ async function bootstrap() {
       exceptionFactory: (errors) => {
         return new UnprocessableEntityException({
           statusCode: 422,
-          message: 'Validation failed',
+          message: 'Validation Error',
           errors: errors.map((error) => ({
             field: error.property,
             errors: Object.values(error.constraints || {}),
@@ -26,25 +26,25 @@ async function bootstrap() {
     }),    
   );
 
-// Apply the global exception filter
+
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Set global API prefix
+
   app.setGlobalPrefix('/v1/api');    
 
-  // Enable CORS
+
   app.enableCors();
 
   
-  // Get port from environment variables or default to 3000
-  const port = process.env.PORT || 3000; // Define the port variable
+
+  const port = process.env.PORT || 3000; 
 
   try {
     await app.listen(port);
     console.log(`Application is running on port: ${port}`);
   } catch (err) {
     console.error(`Error during startup: ${err.message}`);
-    process.exit(1); // Ensures the process exits with status 1 if there's an error
+    process.exit(1);
   }
 }
 

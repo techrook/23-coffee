@@ -23,7 +23,6 @@ export class PaymentController {
   @Post('verify')
   async verifyPayment(@Body() referenceObj: VerifyPaymentDto) {
     const reference= referenceObj.reference
-    console.log(reference)
     return this.paymentService.verifyPayment(reference);
   }
 }
